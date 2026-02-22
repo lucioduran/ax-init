@@ -1,0 +1,51 @@
+{
+  "name": "ax-init",
+  "version": "1.0.0",
+  "description": "Generate AI Agent Experience (AX) files — companion to ax-audit",
+  "main": "dist/index.js",
+  "bin": {
+    "ax-init": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "llms-txt",
+    "robots-txt",
+    "agent-card",
+    "structured-data",
+    "security-txt",
+    "ax",
+    "ai-readiness",
+    "ai-agent-experience"
+  ],
+  "author": "Lucio Duran <email@lucioduran.com> (https://lucioduran.com)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucioduran/ax-init.git"
+  },
+  "homepage": "https://github.com/lucioduran/ax-init",
+  "bugs": {
+    "url": "https://github.com/lucioduran/ax-init/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9"
+  }
+}
