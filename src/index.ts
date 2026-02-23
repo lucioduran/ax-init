@@ -5,6 +5,7 @@ import * as path from 'path';
 import pc from 'picocolors';
 import { runPrompts } from './prompts';
 import { Config } from './types';
+import { detect, DetectedInfo } from './detect';
 import { generateLlmsTxt } from './generators/llms-txt';
 import { generateRobotsTxt } from './generators/robots-txt';
 import { generateAgentJson } from './generators/agent-json';
@@ -15,7 +16,7 @@ import { generateMetaTags } from './generators/meta-tags';
 import { generateHttpHeaders } from './generators/http-headers';
 import { generateOpenApiYaml } from './generators/openapi-yaml';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 
 interface GeneratorEntry {
   id: string;
@@ -92,10 +93,11 @@ function printHelp(): void {
   console.log('');
   console.log(pc.bold('  Usage:'));
   console.log('');
-  console.log('    npx ax-init                   Interactive mode');
-  console.log('    npx ax-init --config ax.json   Non-interactive mode');
-  console.log('    npx ax-init --help             Show this help');
-  console.log('    npx ax-init --version          Show version');
+  console.log('    npx ax-init                        Interactive mode');
+  console.log('    npx ax-init --from <url>            Detect existing files, pre-fill prompts');
+  console.log('    npx ax-init --config ax.json        Non-interactive mode');
+  console.log('    npx ax-init --help                  Show this help');
+  console.log('    npx ax-init --version               Show version');
   console.log('');
   console.log(pc.bold('  Config file format (ax.json):'));
   console.log('');
@@ -125,6 +127,38 @@ function printHelp(): void {
   console.log('    structured-data   JSON-LD snippet for <head>');
   console.log('    meta-tags         AI meta tags for <head>');
   console.log('    http-headers      Server header configuration');
+  console.log('');
+}
+
+function printDetectionSummary(info: DetectedInfo): void {
+  for (const file of info.existingFiles) {
+    if (file.found) {
+      const detail = file.detail ? pc.dim(` (${file.detail})`) : '';
+      console.log(`  ${pc.green('✓')} ${file.label.padEnd(18)} ${pc.dim('found')}${detail}`);
+    } else {
+      console.log(`  ${pc.red('✗')} ${file.label.padEnd(18)} ${pc.dim('not found')}`);
+    }
+  }
+
+  console.log('');
+
+  const parts: string[] = [];
+  if (info.name) parts.push(`"${info.name}"`);
+  if (info.type) parts.push(`${info.type} site`);
+
+  if (parts.length > 0) {
+    console.log(`  Detected: ${parts.join(' — ')}`);
+  }
+  if (info.contactEmail) {
+    console.log(`  Contact:  ${info.contactEmail}`);
+  }
+  if (info.languages && info.languages.length > 0) {
+    console.log(`  Languages: ${info.languages.join(', ')}`);
+  }
+  if (info.crawlerPolicy) {
+    console.log(`  Crawler policy: ${info.crawlerPolicy}`);
+  }
+
   console.log('');
 }
 
@@ -198,15 +232,46 @@ async function main(): Promise<void> {
     return;
   }
 
+  const fromIdx = args.indexOf('--from');
+  const configIdx = args.indexOf('--config');
+
+  // Mutual exclusion
+  if (fromIdx !== -1 && configIdx !== -1) {
+    console.error(pc.red('  Error: --from and --config cannot be used together'));
+    process.exit(1);
+  }
+
   console.log('');
   console.log(pc.bold('  ax-init') + pc.dim(` v${VERSION}`) + pc.dim(' — Generate AI Agent Experience files'));
   console.log('');
 
-  // --config
   let config: Config | null;
-  const configIdx = args.indexOf('--config');
+  let detected: DetectedInfo | undefined;
 
-  if (configIdx !== -1) {
+  if (fromIdx !== -1) {
+    // --from <url>
+    const fromUrl = args[fromIdx + 1];
+    if (!fromUrl || fromUrl.startsWith('--')) {
+      console.error(pc.red('  Error: --from requires a URL'));
+      process.exit(1);
+    }
+
+    let normalizedUrl = fromUrl;
+    if (!normalizedUrl.startsWith('http')) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+    normalizedUrl = normalizedUrl.replace(/\/+$/, '');
+
+    console.log(pc.dim(`  Scanning ${normalizedUrl}...`));
+    console.log('');
+
+    detected = await detect(normalizedUrl);
+    printDetectionSummary(detected);
+
+    config = await runPrompts(detected);
+    if (!config) return;
+  } else if (configIdx !== -1) {
+    // --config <file>
     const configPath = args[configIdx + 1];
     if (!configPath) {
       console.error(pc.red('  Error: --config requires a file path'));
@@ -216,6 +281,7 @@ async function main(): Promise<void> {
     console.log(pc.dim(`  Using config: ${path.resolve(configPath)}`));
     console.log('');
   } else {
+    // Interactive mode
     config = await runPrompts();
     if (!config) return;
   }

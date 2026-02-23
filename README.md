@@ -13,11 +13,40 @@ npx ax-init
 ### CLI flags
 
 ```bash
-npx ax-init                     # Interactive mode
-npx ax-init --config ax.json    # Non-interactive mode
-npx ax-init --help              # Show help
-npx ax-init --version           # Show version
+npx ax-init                          # Interactive mode
+npx ax-init --from <url>             # Detect existing files, pre-fill prompts
+npx ax-init --config ax.json         # Non-interactive mode
+npx ax-init --help                   # Show help
+npx ax-init --version                # Show version
 ```
+
+### Auto-detect mode
+
+Scan an existing site to detect what AX files are already present. Pre-fills prompts with discovered metadata and pre-deselects generators for files that already exist:
+
+```bash
+npx ax-init --from https://example.com
+```
+
+```
+  Scanning https://example.com...
+
+  ✓ llms.txt           found
+  ✓ robots.txt         found (policy: allow)
+  ✗ agent.json         not found
+  ✗ mcp.json           not found
+  ✓ security.txt       found
+  ✗ openapi.yaml       not found
+  ✓ Structured Data    found
+  ✓ AI Meta Tags       found
+  ✓ HTTP Headers       found
+
+  Detected: "Example Corp" — business site
+  Contact: hello@example.com
+  Languages: en, es
+```
+
+Prompts are pre-filled with detected values. Only missing files are selected by default.
 
 ### Non-interactive mode
 
@@ -71,7 +100,7 @@ Interactive CLI that generates:
 ```
 $ npx ax-init
 
-  ax-init v1.1.0 — Generate AI Agent Experience files
+  ax-init v1.2.0 — Generate AI Agent Experience files
 
   Site URL: https://example.com
   Site name: Example

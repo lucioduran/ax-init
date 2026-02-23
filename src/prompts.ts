@@ -1,5 +1,7 @@
 import prompts from 'prompts';
+import pc from 'picocolors';
 import { Config } from './types';
+import { DetectedInfo } from './detect';
 
 const GENERATORS = [
   { title: 'llms.txt', value: 'llms-txt', description: 'LLM-readable site description' },
@@ -12,11 +14,23 @@ const GENERATORS = [
   { title: 'HTTP Headers', value: 'http-headers', description: 'Nginx/Apache/Vercel/Netlify config' },
 ];
 
-export async function runPrompts(): Promise<Config | null> {
+const TYPE_CHOICES = [
+  { title: 'Personal', value: 'personal' },
+  { title: 'Business', value: 'business' },
+  { title: 'API / Developer Tool', value: 'api' },
+  { title: 'Blog', value: 'blog' },
+];
+
+const POLICY_CHOICES = [
+  { title: 'Allow — let AI crawlers index your site', value: 'allow' },
+  { title: 'Block — disallow AI crawlers', value: 'block' },
+];
+
+export async function runPrompts(detected?: DetectedInfo): Promise<Config | null> {
   const response = await prompts(
     [
       {
-        type: 'text',
+        type: detected ? null : 'text',
         name: 'url',
         message: 'Site URL',
         validate: (v: string) => {
@@ -30,35 +44,37 @@ export async function runPrompts(): Promise<Config | null> {
         type: 'text',
         name: 'name',
         message: 'Site name',
+        initial: detected?.name || undefined,
         validate: (v: string) => (v.trim() ? true : 'Name is required'),
       },
       {
         type: 'select',
         name: 'type',
         message: 'Site type',
-        choices: [
-          { title: 'Personal', value: 'personal' },
-          { title: 'Business', value: 'business' },
-          { title: 'API / Developer Tool', value: 'api' },
-          { title: 'Blog', value: 'blog' },
-        ],
+        choices: TYPE_CHOICES,
+        initial: detected?.type
+          ? TYPE_CHOICES.findIndex((c) => c.value === detected.type)
+          : 0,
       },
       {
         type: 'text',
         name: 'description',
         message: 'Brief description (one line)',
+        initial: detected?.description || undefined,
         validate: (v: string) => (v.trim() ? true : 'Description is required'),
       },
       {
         type: 'text',
         name: 'contactName',
         message: 'Your name or organization',
+        initial: detected?.contactName || undefined,
         validate: (v: string) => (v.trim() ? true : 'Name is required'),
       },
       {
         type: 'text',
         name: 'contactEmail',
         message: 'Contact email',
+        initial: detected?.contactEmail || undefined,
         validate: (v: string) => {
           if (!v.trim()) return 'Email is required';
           if (!v.includes('@')) return 'Enter a valid email';
@@ -69,16 +85,14 @@ export async function runPrompts(): Promise<Config | null> {
         type: 'text',
         name: 'languages',
         message: 'Languages (comma-separated)',
-        initial: 'en',
+        initial: detected?.languages ? detected.languages.join(', ') : 'en',
       },
       {
         type: 'select',
         name: 'crawlerPolicy',
         message: 'AI crawler policy',
-        choices: [
-          { title: 'Allow — let AI crawlers index your site', value: 'allow' },
-          { title: 'Block — disallow AI crawlers', value: 'block' },
-        ],
+        choices: POLICY_CHOICES,
+        initial: detected?.crawlerPolicy === 'block' ? 1 : 0,
       },
       {
         type: 'text',
@@ -90,17 +104,34 @@ export async function runPrompts(): Promise<Config | null> {
         type: 'multiselect',
         name: 'generators',
         message: 'Files to generate',
-        choices: GENERATORS.map((g) => ({ ...g, selected: true })),
+        choices: GENERATORS.map((g) => {
+          const existing = detected?.existingFiles.find((f) => f.id === g.value);
+          const alreadyExists = existing?.found === true;
+          return {
+            ...g,
+            selected: !alreadyExists,
+            description: alreadyExists
+              ? `${g.description} ${pc.yellow('(exists)')}`
+              : g.description,
+          };
+        }),
         min: 1,
-        hint: '- Space to toggle, Enter to confirm',
+        hint: detected
+          ? '- Space to toggle, Enter to confirm. Existing files are deselected.'
+          : '- Space to toggle, Enter to confirm',
       },
     ],
     {
       onCancel: () => {
         process.exit(0);
       },
-    }
+    },
   );
+
+  // Inject URL when --from was used (prompt was skipped)
+  if (detected) {
+    response.url = detected.url;
+  }
 
   if (!response.url) return null;
 
