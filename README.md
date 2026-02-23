@@ -34,6 +34,7 @@ npx ax-init --from https://example.com
   Scanning https://example.com...
 
   ✓ llms.txt           found
+  ✗ llms-full.txt      not found
   ✓ robots.txt         found (policy: allow)
   ✗ agent.json         not found
   ✗ mcp.json           not found
@@ -84,8 +85,8 @@ Create an `ax.json` config file and run without prompts — useful for CI/CD:
   "languages": ["en"],
   "crawlerPolicy": "allow",
   "outputDir": "./public",
-  "generators": ["llms-txt", "robots-txt", "agent-json", "mcp-json",
-    "security-txt", "structured-data", "meta-tags", "http-headers"]
+  "generators": ["llms-txt", "llms-full-txt", "robots-txt", "agent-json",
+    "mcp-json", "security-txt", "structured-data", "meta-tags", "http-headers"]
 }
 ```
 
@@ -100,6 +101,7 @@ Interactive CLI that generates:
 | File | Description |
 |------|-------------|
 | `llms.txt` | LLM-readable site description ([llmstxt.org](https://llmstxt.org) spec) |
+| `llms-full.txt` | Extended LLM-readable site content with full inline sections |
 | `robots.txt` | AI crawler allow/block rules for 29+ known crawlers |
 | `.well-known/agent.json` | A2A Agent Card for protocol compliance |
 | `.well-known/mcp.json` | MCP server configuration for AI agent discovery |
@@ -121,7 +123,7 @@ Interactive CLI that generates:
 ```
 $ npx ax-init
 
-  ax-init v1.3.0 — Generate AI Agent Experience files
+  ax-init v1.4.0 — Generate AI Agent Experience files
 
   Site URL: https://example.com
   Site name: Example
@@ -135,12 +137,13 @@ $ npx ax-init
   Files to generate: all
 
   ✓ public/llms.txt
+  ✓ public/llms-full.txt
   ✓ public/robots.txt
   ✓ public/.well-known/agent.json
   ✓ public/.well-known/mcp.json
   ✓ public/.well-known/security.txt
 
-  5 files written
+  6 files written
 
   Snippets — copy to your config:
 
@@ -156,6 +159,8 @@ $ npx ax-init
   ── HTTP Headers ──
   # Nginx / Apache / Vercel / Netlify configs
   ...
+
+  ✓ All files validated
 
   ──────────────────────────────────────
 

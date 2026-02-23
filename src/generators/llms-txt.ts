@@ -1,4 +1,4 @@
-import { Config } from '../types';
+import { Config, aboutLine } from '../types';
 
 export function generateLlmsTxt(config: Config): string {
   const lines: string[] = [];
@@ -10,21 +10,7 @@ export function generateLlmsTxt(config: Config): string {
 
   lines.push('## About');
   lines.push('');
-
-  switch (config.type) {
-    case 'personal':
-      lines.push(`${config.name} is a personal website and portfolio of ${config.contactName}.`);
-      break;
-    case 'business':
-      lines.push(`${config.name} is the official website of ${config.contactName}.`);
-      break;
-    case 'api':
-      lines.push(`${config.name} provides API services. ${config.description}`);
-      break;
-    case 'blog':
-      lines.push(`${config.name} is a blog by ${config.contactName}.`);
-      break;
-  }
+  lines.push(aboutLine(config));
 
   lines.push('');
   lines.push('## Links');

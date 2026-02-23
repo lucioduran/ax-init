@@ -5,6 +5,7 @@ import { DetectedInfo } from './detect';
 
 const GENERATORS = [
   { title: 'llms.txt', value: 'llms-txt', description: 'LLM-readable site description' },
+  { title: 'llms-full.txt', value: 'llms-full-txt', description: 'Extended LLM-readable site content' },
   { title: 'robots.txt (AI rules)', value: 'robots-txt', description: 'AI crawler allow/block rules' },
   { title: 'agent.json', value: 'agent-json', description: 'A2A Agent Card at /.well-known/' },
   { title: 'mcp.json', value: 'mcp-json', description: 'MCP server config at /.well-known/' },

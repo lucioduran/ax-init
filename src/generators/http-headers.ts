@@ -23,9 +23,10 @@ export function generateHttpHeaders(config: Config): string {
   sections.push('');
   sections.push('# ── Apache (.htaccess) ──');
   sections.push('');
-  sections.push('Header set X-Robots-Tag "' + policy + ', noai"');
-  sections.push(`Header add Link "<${config.url}/llms.txt>; rel=\\"alternate\\"; type=\\"text/plain\\"; title=\\"LLM-readable\\""'`);
-  sections.push(`Header add Link "<${config.url}/.well-known/agent.json>; rel=\\"agent\\"; type=\\"application/json\\""'`);
+  sections.push(`Header set X-Robots-Tag "${policy}, noai"`);
+  sections.push(`Header add Link "<${config.url}/llms.txt>; rel=\\"alternate\\"; type=\\"text/plain\\"; title=\\"LLM-readable\\""`);
+  sections.push(`Header add Link "<${config.url}/.well-known/agent.json>; rel=\\"agent\\"; type=\\"application/json\\""`);
+
 
   // Vercel (vercel.json)
   sections.push('');

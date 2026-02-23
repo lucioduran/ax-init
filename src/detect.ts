@@ -296,11 +296,12 @@ export async function detect(inputUrl: string): Promise<DetectedInfo> {
   };
 
   // Fire all fetches in parallel
-  const [head, html, llmsTxt, robotsTxt, agentJson, mcpJson, securityTxt, openapiYaml, openapiJson] =
+  const [head, html, llmsTxt, llmsFullTxt, robotsTxt, agentJson, mcpJson, securityTxt, openapiYaml, openapiJson] =
     await Promise.all([
       safeFetch(url, 'HEAD'),
       safeFetch(url),
       safeFetch(`${url}/llms.txt`),
+      safeFetch(`${url}/llms-full.txt`, 'HEAD'),
       safeFetch(`${url}/robots.txt`),
       safeFetch(`${url}/.well-known/agent.json`),
       safeFetch(`${url}/.well-known/mcp.json`, 'HEAD'),
@@ -334,6 +335,7 @@ export async function detect(inputUrl: string): Promise<DetectedInfo> {
 
   info.existingFiles = [
     { id: 'llms-txt', label: 'llms.txt', found: !!llmsTxt?.ok },
+    { id: 'llms-full-txt', label: 'llms-full.txt', found: !!llmsFullTxt?.ok },
     { id: 'robots-txt', label: 'robots.txt', found: !!robotsTxt?.ok },
     { id: 'agent-json', label: 'agent.json', found: !!agentJson?.ok },
     { id: 'mcp-json', label: 'mcp.json', found: !!mcpJson?.ok },
