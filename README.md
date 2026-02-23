@@ -16,6 +16,8 @@ npx ax-init
 npx ax-init                          # Interactive mode
 npx ax-init --from <url>             # Detect existing files, pre-fill prompts
 npx ax-init --config ax.json         # Non-interactive mode
+npx ax-init --dry-run                # Preview without writing files
+npx ax-init --save-config            # Save answers to ax.json after prompts
 npx ax-init --help                   # Show help
 npx ax-init --version                # Show version
 ```
@@ -47,6 +49,25 @@ npx ax-init --from https://example.com
 ```
 
 Prompts are pre-filled with detected values. Only missing files are selected by default.
+
+### Dry run
+
+Preview what would be generated without writing any files:
+
+```bash
+npx ax-init --config ax.json --dry-run
+npx ax-init --from https://example.com --dry-run
+```
+
+### Save config
+
+Save your prompt answers to `ax.json` for future runs with `--config`:
+
+```bash
+npx ax-init --save-config
+# or combine with --from:
+npx ax-init --from https://example.com --save-config
+```
 
 ### Non-interactive mode
 
@@ -100,7 +121,7 @@ Interactive CLI that generates:
 ```
 $ npx ax-init
 
-  ax-init v1.2.0 — Generate AI Agent Experience files
+  ax-init v1.3.0 — Generate AI Agent Experience files
 
   Site URL: https://example.com
   Site name: Example

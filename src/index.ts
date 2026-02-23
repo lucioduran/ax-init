@@ -16,7 +16,7 @@ import { generateMetaTags } from './generators/meta-tags';
 import { generateHttpHeaders } from './generators/http-headers';
 import { generateOpenApiYaml } from './generators/openapi-yaml';
 
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 
 interface GeneratorEntry {
   id: string;
@@ -96,6 +96,8 @@ function printHelp(): void {
   console.log('    npx ax-init                        Interactive mode');
   console.log('    npx ax-init --from <url>            Detect existing files, pre-fill prompts');
   console.log('    npx ax-init --config ax.json        Non-interactive mode');
+  console.log('    npx ax-init --dry-run               Preview without writing files');
+  console.log('    npx ax-init --save-config            Save answers to ax.json after prompts');
   console.log('    npx ax-init --help                  Show this help');
   console.log('    npx ax-init --version               Show version');
   console.log('');
@@ -234,6 +236,8 @@ async function main(): Promise<void> {
 
   const fromIdx = args.indexOf('--from');
   const configIdx = args.indexOf('--config');
+  const dryRun = args.includes('--dry-run');
+  const saveConfig = args.includes('--save-config');
 
   // Mutual exclusion
   if (fromIdx !== -1 && configIdx !== -1) {
@@ -286,7 +290,25 @@ async function main(): Promise<void> {
     if (!config) return;
   }
 
+  // --save-config: write ax.json from the resolved config
+  if (saveConfig && configIdx === -1) {
+    const savePath = path.join(config.outputDir, 'ax.json');
+    const configToSave = { ...config };
+    delete (configToSave as Record<string, unknown>).outputDir;
+    delete (configToSave as Record<string, unknown>).generators;
+    fs.mkdirSync(path.dirname(path.resolve(savePath)), { recursive: true });
+    fs.writeFileSync(path.resolve(savePath), JSON.stringify(configToSave, null, 2) + '\n');
+    console.log('');
+    console.log(`  ${pc.green('✓')} Saved config to ${savePath}`);
+    console.log(pc.dim(`    Re-run with: npx ax-init --config ${savePath}`));
+  }
+
   console.log('');
+
+  if (dryRun) {
+    console.log(pc.bold('  Dry run') + pc.dim(' — no files written'));
+    console.log('');
+  }
 
   const snippets: { label: string; content: string }[] = [];
   let filesWritten = 0;
@@ -300,16 +322,27 @@ async function main(): Promise<void> {
     const content = gen.generate(config);
 
     if (gen.filePath) {
-      writeFile(config.outputDir, gen.filePath, content);
       const relativePath = path.join(config.outputDir, gen.filePath);
-      console.log(`  ${pc.green('✓')} ${relativePath}`);
-      filesWritten++;
+      if (dryRun) {
+        // Show file content preview
+        console.log(pc.dim(`  ── ${relativePath} ──`));
+        console.log('');
+        for (const line of content.split('\n')) {
+          console.log(`  ${line}`);
+        }
+        console.log('');
+        filesWritten++;
+      } else {
+        writeFile(config.outputDir, gen.filePath, content);
+        console.log(`  ${pc.green('✓')} ${relativePath}`);
+        filesWritten++;
+      }
     } else {
       snippets.push({ label: gen.label, content });
     }
   }
 
-  if (filesWritten > 0) {
+  if (filesWritten > 0 && !dryRun) {
     console.log('');
     console.log(pc.dim(`  ${filesWritten} file${filesWritten > 1 ? 's' : ''} written`));
   }
