@@ -1,6 +1,6 @@
 {
   "name": "ax-init",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generate AI Agent Experience (AX) files — companion to ax-audit",
   "main": "dist/index.js",
   "bin": {
@@ -24,7 +24,9 @@
     "security-txt",
     "ax",
     "ai-readiness",
-    "ai-agent-experience"
+    "ai-agent-experience",
+    "mcp",
+    "openapi"
   ],
   "author": "Lucio Duran <email@lucioduran.com> (https://lucioduran.com)",
   "license": "Apache-2.0",

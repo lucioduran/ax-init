@@ -5,9 +5,11 @@ const GENERATORS = [
   { title: 'llms.txt', value: 'llms-txt', description: 'LLM-readable site description' },
   { title: 'robots.txt (AI rules)', value: 'robots-txt', description: 'AI crawler allow/block rules' },
   { title: 'agent.json', value: 'agent-json', description: 'A2A Agent Card at /.well-known/' },
+  { title: 'mcp.json', value: 'mcp-json', description: 'MCP server config at /.well-known/' },
   { title: 'security.txt', value: 'security-txt', description: 'RFC 9116 at /.well-known/' },
   { title: 'Structured Data (JSON-LD)', value: 'structured-data', description: 'HTML snippet for <head>' },
   { title: 'AI Meta Tags', value: 'meta-tags', description: 'HTML snippet for <head>' },
+  { title: 'HTTP Headers', value: 'http-headers', description: 'Nginx/Apache/Vercel/Netlify config' },
 ];
 
 export async function runPrompts(): Promise<Config | null> {

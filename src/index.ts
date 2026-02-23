@@ -8,15 +8,21 @@ import { Config } from './types';
 import { generateLlmsTxt } from './generators/llms-txt';
 import { generateRobotsTxt } from './generators/robots-txt';
 import { generateAgentJson } from './generators/agent-json';
+import { generateMcpJson } from './generators/mcp-json';
 import { generateSecurityTxt } from './generators/security-txt';
 import { generateStructuredData } from './generators/structured-data';
 import { generateMetaTags } from './generators/meta-tags';
+import { generateHttpHeaders } from './generators/http-headers';
+import { generateOpenApiYaml } from './generators/openapi-yaml';
+
+const VERSION = '1.1.0';
 
 interface GeneratorEntry {
   id: string;
   label: string;
   filePath: string | null; // null = console output only
   generate: (config: Config) => string;
+  condition?: (config: Config) => boolean;
 }
 
 const GENERATORS: GeneratorEntry[] = [
@@ -39,10 +45,23 @@ const GENERATORS: GeneratorEntry[] = [
     generate: generateAgentJson,
   },
   {
+    id: 'mcp-json',
+    label: 'mcp.json',
+    filePath: '.well-known/mcp.json',
+    generate: generateMcpJson,
+  },
+  {
     id: 'security-txt',
     label: 'security.txt',
     filePath: '.well-known/security.txt',
     generate: generateSecurityTxt,
+  },
+  {
+    id: 'openapi-yaml',
+    label: 'openapi.yaml',
+    filePath: 'openapi.yaml',
+    generate: generateOpenApiYaml,
+    condition: (config) => config.type === 'api',
   },
   {
     id: 'structured-data',
@@ -56,7 +75,96 @@ const GENERATORS: GeneratorEntry[] = [
     filePath: null,
     generate: generateMetaTags,
   },
+  {
+    id: 'http-headers',
+    label: 'HTTP Headers',
+    filePath: null,
+    generate: generateHttpHeaders,
+  },
 ];
+
+function printHelp(): void {
+  console.log('');
+  console.log(pc.bold('  ax-init') + pc.dim(` v${VERSION}`));
+  console.log('');
+  console.log('  Generate AI Agent Experience (AX) files for your website.');
+  console.log('  Companion tool to ax-audit.');
+  console.log('');
+  console.log(pc.bold('  Usage:'));
+  console.log('');
+  console.log('    npx ax-init                   Interactive mode');
+  console.log('    npx ax-init --config ax.json   Non-interactive mode');
+  console.log('    npx ax-init --help             Show this help');
+  console.log('    npx ax-init --version          Show version');
+  console.log('');
+  console.log(pc.bold('  Config file format (ax.json):'));
+  console.log('');
+  console.log(pc.dim('    {'));
+  console.log(pc.dim('      "url": "https://example.com",'));
+  console.log(pc.dim('      "name": "My Site",'));
+  console.log(pc.dim('      "type": "business",'));
+  console.log(pc.dim('      "description": "A great website",'));
+  console.log(pc.dim('      "contactName": "Acme Inc",'));
+  console.log(pc.dim('      "contactEmail": "hello@example.com",'));
+  console.log(pc.dim('      "languages": ["en"],'));
+  console.log(pc.dim('      "crawlerPolicy": "allow",'));
+  console.log(pc.dim('      "outputDir": ".",'));
+  console.log(pc.dim('      "generators": ["llms-txt", "robots-txt", "agent-json",'));
+  console.log(pc.dim('        "mcp-json", "security-txt", "structured-data",'));
+  console.log(pc.dim('        "meta-tags", "http-headers"]'));
+  console.log(pc.dim('    }'));
+  console.log('');
+  console.log(pc.bold('  Generators:'));
+  console.log('');
+  console.log('    llms-txt          LLM-readable site description');
+  console.log('    robots-txt        AI crawler allow/block rules');
+  console.log('    agent-json        A2A Agent Card at /.well-known/');
+  console.log('    mcp-json          MCP server config at /.well-known/');
+  console.log('    security-txt      RFC 9116 at /.well-known/');
+  console.log('    openapi-yaml      OpenAPI 3.0 stub (API type only)');
+  console.log('    structured-data   JSON-LD snippet for <head>');
+  console.log('    meta-tags         AI meta tags for <head>');
+  console.log('    http-headers      Server header configuration');
+  console.log('');
+}
+
+function loadConfigFile(filePath: string): Config {
+  const absPath = path.resolve(filePath);
+
+  if (!fs.existsSync(absPath)) {
+    throw new Error(`Config file not found: ${absPath}`);
+  }
+
+  const raw = fs.readFileSync(absPath, 'utf-8');
+  const config = JSON.parse(raw) as Config;
+
+  // Validate required fields
+  const required: (keyof Config)[] = [
+    'url', 'name', 'type', 'description',
+    'contactName', 'contactEmail',
+  ];
+
+  for (const field of required) {
+    if (!config[field]) {
+      throw new Error(`Missing required field in config: "${field}"`);
+    }
+  }
+
+  // Defaults
+  if (!config.languages) config.languages = ['en'];
+  if (!config.crawlerPolicy) config.crawlerPolicy = 'allow';
+  if (!config.outputDir) config.outputDir = '.';
+  if (!config.generators) {
+    config.generators = GENERATORS
+      .filter((g) => !g.condition || g.condition(config))
+      .map((g) => g.id);
+  }
+
+  // Normalize URL
+  config.url = config.url.replace(/\/+$/, '');
+
+  return config;
+}
 
 function writeFile(outputDir: string, filePath: string, content: string): void {
   const fullPath = path.join(outputDir, filePath);
@@ -76,12 +184,41 @@ function writeFile(outputDir: string, filePath: string, content: string): void {
 }
 
 async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+
+  // --version
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(VERSION);
+    return;
+  }
+
+  // --help
+  if (args.includes('--help') || args.includes('-h')) {
+    printHelp();
+    return;
+  }
+
   console.log('');
-  console.log(pc.bold('  ax-init') + pc.dim(' — Generate AI Agent Experience files'));
+  console.log(pc.bold('  ax-init') + pc.dim(` v${VERSION}`) + pc.dim(' — Generate AI Agent Experience files'));
   console.log('');
 
-  const config = await runPrompts();
-  if (!config) return;
+  // --config
+  let config: Config | null;
+  const configIdx = args.indexOf('--config');
+
+  if (configIdx !== -1) {
+    const configPath = args[configIdx + 1];
+    if (!configPath) {
+      console.error(pc.red('  Error: --config requires a file path'));
+      process.exit(1);
+    }
+    config = loadConfigFile(configPath);
+    console.log(pc.dim(`  Using config: ${path.resolve(configPath)}`));
+    console.log('');
+  } else {
+    config = await runPrompts();
+    if (!config) return;
+  }
 
   console.log('');
 
@@ -90,6 +227,9 @@ async function main(): Promise<void> {
 
   for (const gen of GENERATORS) {
     if (!config.generators.includes(gen.id)) continue;
+
+    // Skip generators that don't apply to this site type
+    if (gen.condition && !gen.condition(config)) continue;
 
     const content = gen.generate(config);
 
@@ -110,7 +250,7 @@ async function main(): Promise<void> {
 
   if (snippets.length > 0) {
     console.log('');
-    console.log(pc.bold('  HTML snippets') + pc.dim(' — copy to your <head>:'));
+    console.log(pc.bold('  Snippets') + pc.dim(' — copy to your config:'));
 
     for (const snippet of snippets) {
       console.log('');
@@ -126,6 +266,7 @@ async function main(): Promise<void> {
   console.log(pc.dim('  ──────────────────────────────────────'));
   console.log('');
   console.log(`  Verify your score: ${pc.cyan(`npx ax-audit ${config.url}`)}`);
+  console.log(`  Show only issues:  ${pc.cyan(`npx ax-audit ${config.url} --only-failures`)}`);
   console.log('');
 }
 

@@ -10,22 +10,60 @@
 npx ax-init
 ```
 
+### CLI flags
+
+```bash
+npx ax-init                     # Interactive mode
+npx ax-init --config ax.json    # Non-interactive mode
+npx ax-init --help              # Show help
+npx ax-init --version           # Show version
+```
+
+### Non-interactive mode
+
+Create an `ax.json` config file and run without prompts — useful for CI/CD:
+
+```json
+{
+  "url": "https://example.com",
+  "name": "My Site",
+  "type": "business",
+  "description": "A great website",
+  "contactName": "Acme Inc",
+  "contactEmail": "hello@example.com",
+  "languages": ["en"],
+  "crawlerPolicy": "allow",
+  "outputDir": "./public",
+  "generators": ["llms-txt", "robots-txt", "agent-json", "mcp-json",
+    "security-txt", "structured-data", "meta-tags", "http-headers"]
+}
+```
+
+```bash
+npx ax-init --config ax.json
+```
+
+## Generated files
+
 Interactive CLI that generates:
 
 | File | Description |
 |------|-------------|
 | `llms.txt` | LLM-readable site description ([llmstxt.org](https://llmstxt.org) spec) |
-| `robots.txt` | AI crawler allow/block rules for 22+ known crawlers |
+| `robots.txt` | AI crawler allow/block rules for 29+ known crawlers |
 | `.well-known/agent.json` | A2A Agent Card for protocol compliance |
+| `.well-known/mcp.json` | MCP server configuration for AI agent discovery |
 | `.well-known/security.txt` | RFC 9116 security contact file |
+| `openapi.yaml` | OpenAPI 3.0 stub (API type sites only) |
 | JSON-LD | Structured data `<script>` tag for `<head>` |
 | AI Meta Tags | `<meta>` and `<link>` tags for `<head>` |
+| HTTP Headers | Server config snippets for Nginx, Apache, Vercel, Netlify |
 
 ## How it works
 
-1. Answer 9 questions about your site (URL, name, type, description, contact, languages, crawler policy)
+1. Answer questions about your site (URL, name, type, description, contact, languages, crawler policy)
 2. Select which files to generate
-3. Files are written to your output directory; HTML snippets are printed to the console
+3. Files are written to your output directory; snippets are printed to the console
 4. Run `npx ax-audit` to verify your score
 
 ## Example
@@ -33,7 +71,7 @@ Interactive CLI that generates:
 ```
 $ npx ax-init
 
-  ax-init — Generate AI Agent Experience files
+  ax-init v1.1.0 — Generate AI Agent Experience files
 
   Site URL: https://example.com
   Site name: Example
@@ -49,11 +87,12 @@ $ npx ax-init
   ✓ public/llms.txt
   ✓ public/robots.txt
   ✓ public/.well-known/agent.json
+  ✓ public/.well-known/mcp.json
   ✓ public/.well-known/security.txt
 
-  2 files written
+  5 files written
 
-  HTML snippets — copy to your <head>:
+  Snippets — copy to your config:
 
   ── Structured Data (JSON-LD) ──
   <script type="application/ld+json">
@@ -64,23 +103,28 @@ $ npx ax-init
   <meta name="ai:site" content="Example">
   ...
 
+  ── HTTP Headers ──
+  # Nginx / Apache / Vercel / Netlify configs
+  ...
+
   ──────────────────────────────────────
 
   Verify your score: npx ax-audit https://example.com
+  Show only issues:  npx ax-audit https://example.com --only-failures
 ```
 
 ## Supported site types
 
 - **Personal** — generates `Person` schema, personal llms.txt
 - **Business** — generates `Organization` schema, corporate llms.txt
-- **API / Developer Tool** — generates `SoftwareApplication` schema, API-focused llms.txt
+- **API / Developer Tool** — generates `SoftwareApplication` schema, API-focused llms.txt, OpenAPI stub
 - **Blog** — generates `Blog` schema, content-focused llms.txt
 
 ## AI crawlers configured
 
-robots.txt rules cover 22 known AI crawlers including:
+robots.txt rules cover 29 known AI crawlers including:
 
-GPTBot, ChatGPT-User, ClaudeBot, Claude-Web, Google-Extended, Amazonbot, Bytespider, CCBot, PerplexityBot, YouBot, Cohere-ai, anthropic-ai, Meta-ExternalAgent, OAI-SearchBot, and more.
+GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-Web, anthropic-ai, Google-Extended, Gemini, Amazonbot, Grok, xAI-Bot, DeepSeekBot, Meta-ExternalAgent, Meta-ExternalFetcher, PerplexityBot, and more.
 
 ## Requirements
 

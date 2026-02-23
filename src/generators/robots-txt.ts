@@ -4,27 +4,37 @@ const AI_CRAWLERS = [
   // Core AI crawlers
   'GPTBot',
   'ChatGPT-User',
+  'OAI-SearchBot',
   'ClaudeBot',
   'Claude-Web',
+  'anthropic-ai',
   'Google-Extended',
+  'Gemini',
   'Amazonbot',
+  // xAI / Grok
+  'Grok',
+  'xAI-Bot',
+  // DeepSeek
+  'DeepSeekBot',
+  // Meta
+  'Meta-ExternalAgent',
+  'Meta-ExternalFetcher',
+  'FacebookBot',
   // Additional AI crawlers
   'Bytespider',
   'CCBot',
   'PerplexityBot',
   'YouBot',
   'Cohere-ai',
-  'anthropic-ai',
-  'Meta-ExternalAgent',
-  'FacebookBot',
   'Applebot-Extended',
-  'OAI-SearchBot',
   'AI2Bot',
   'Diffbot',
   'Omgilibot',
   'Timpibot',
   'img2dataset',
   'PetalBot',
+  'Webz.io',
+  'iaskspider',
 ];
 
 export function generateRobotsTxt(config: Config): string {
