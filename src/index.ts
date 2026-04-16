@@ -17,19 +17,14 @@ import { generateHttpHeaders } from './generators/http-headers';
 import { generateOpenApiYaml } from './generators/openapi-yaml';
 import { generateLlmsFullTxt } from './generators/llms-full-txt';
 import { validateGenerated, ValidationResult } from './validate';
+import { runUpdate } from './update';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: VERSION } = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'),
 ) as { version: string };
 
-interface GeneratorEntry {
-  id: string;
-  label: string;
-  filePath: string | null; // null = console output only
-  generate: (config: Config) => string;
-  condition?: (config: Config) => boolean;
-}
+import type { GeneratorEntry } from './update';
 
 const GENERATORS: GeneratorEntry[] = [
   {
@@ -109,6 +104,7 @@ function printHelp(): void {
   console.log('    npx ax-init --config ax.json        Non-interactive mode');
   console.log('    npx ax-init --dry-run               Preview without writing files');
   console.log('    npx ax-init --save-config            Save answers to ax.json after prompts');
+  console.log('    npx ax-init --update --config ax.json  Re-generate and update existing files');
   console.log('    npx ax-init --help                  Show this help');
   console.log('    npx ax-init --version               Show version');
   console.log('');
@@ -268,10 +264,17 @@ async function main(): Promise<void> {
   const configIdx = args.indexOf('--config');
   const dryRun = args.includes('--dry-run');
   const saveConfig = args.includes('--save-config');
+  const updateMode = args.includes('--update');
 
   // Mutual exclusion
   if (fromIdx !== -1 && configIdx !== -1) {
     console.error(pc.red('  Error: --from and --config cannot be used together'));
+    process.exit(1);
+  }
+
+  if (updateMode && configIdx === -1) {
+    console.error(pc.red('  Error: --update requires --config <path>'));
+    console.error(pc.dim('  Example: npx ax-init --update --config ax.json'));
     process.exit(1);
   }
 
@@ -318,6 +321,19 @@ async function main(): Promise<void> {
     // Interactive mode
     config = await runPrompts();
     if (!config) return;
+  }
+
+  // --update mode: regenerate and compare existing files
+  if (updateMode) {
+    console.log(pc.bold('  Update mode') + pc.dim(` — comparing with existing files in ${config.outputDir}`));
+    console.log('');
+    runUpdate(config, GENERATORS, dryRun);
+    console.log('');
+    console.log(pc.dim('  ──────────────────────────────────────'));
+    console.log('');
+    console.log(`  Verify your score: ${pc.cyan(`npx ax-audit ${config.url}`)}`);
+    console.log('');
+    return;
   }
 
   // --save-config: write ax.json from the resolved config

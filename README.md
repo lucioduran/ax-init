@@ -18,6 +18,8 @@ npx ax-init --from <url>             # Detect existing files, pre-fill prompts
 npx ax-init --config ax.json         # Non-interactive mode
 npx ax-init --dry-run                # Preview without writing files
 npx ax-init --save-config            # Save answers to ax.json after prompts
+npx ax-init --update --config ax.json  # Re-generate and update existing files
+npx ax-init --update --config ax.json --dry-run  # Preview updates
 npx ax-init --help                   # Show help
 npx ax-init --version                # Show version
 ```
@@ -69,6 +71,33 @@ npx ax-init --save-config
 # or combine with --from:
 npx ax-init --from https://example.com --save-config
 ```
+
+### Update mode
+
+Re-generate files from your config and compare with existing files. Only writes files that actually changed — ideal for keeping AX files current as specs evolve:
+
+```bash
+npx ax-init --update --config ax.json
+```
+
+```
+  Update mode — comparing with existing files in ./public
+
+  ─ public/llms.txt (unchanged)
+  ~ public/robots.txt (updated)
+    +3 crawlers
+  ~ public/.well-known/agent.json (updated)
+    ~capabilities, description
+  + public/.well-known/mcp.json (new)
+  ─ public/.well-known/security.txt (unchanged)
+
+  1 new, 2 updated, 2 unchanged
+  ✓ All files validated
+```
+
+Per-file statuses: `+` new, `~` updated, `─` unchanged. For robots.txt, preserves your custom rules and only updates the ax-init block. For security.txt, renews the Expires date.
+
+Combine with `--dry-run` to preview what would change without writing anything.
 
 ### Non-interactive mode
 
